@@ -1,7 +1,12 @@
 import sqlite3
 from tkinter import *
 from datetime import date
+from tkinter import messagebox
 from app.ticket import Ticket, generate_ticket_id
+
+# Check for <script> task 10
+def is_safe_input(value):
+    return "<script>" not in value.lower()
 
 def save_ticket(student_number, student_name, category, priority, description, status):
     # Validation rules
@@ -14,6 +19,23 @@ def save_ticket(student_number, student_name, category, priority, description, s
     if not student_name.strip():
         error_label.config(text="Error: Student name cannot be empty")
         return
+
+    # Check all fields for unsafe input
+    fields = {
+        "Student Number": student_number,
+        "Student Name": student_name,
+        "Category": category,
+        "Priority": priority,
+        "Description": description,
+        "Status": status
+    }
+    for field_name, field_value in fields.items():
+        if not field_value.strip():
+            error_label.config(text=f"Error: {field_name} is required")
+            return
+        if not is_safe_input(field_value):
+            error_label.config(text=f"Error: Unsafe input detected in {field_name}")
+            return
 
     # Generate ticket ID and date
     ticket_id = generate_ticket_id()
@@ -68,7 +90,7 @@ Button(root, text="Save Ticket", command=lambda: save_ticket(
     priority.get(), description.get(), status.get()
 )).grid(row=6, column=1)
 
-# Error and success labels must be defined before use
+# Error and success labels
 error_label = Label(root, text="", fg="red")
 error_label.grid(row=7, column=0, columnspan=2)
 
@@ -77,13 +99,11 @@ success_label.grid(row=8, column=0, columnspan=2)
 
 root.mainloop()
 
+# Debug: print tickets after closing GUI
 conn = sqlite3.connect("data/tickets.db")
 cursor = conn.cursor()
-
 cursor.execute("SELECT * FROM tickets")
 rows = cursor.fetchall()
-
 for row in rows:
     print(row)
-
 conn.close()
